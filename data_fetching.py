@@ -1,0 +1,99 @@
+from langchain_community.chat_models import ChatOpenAI  # Updated import for LangChain >=0.2
+from langchain.chains.llm import LLMChain
+from langchain.prompts import PromptTemplate
+import json
+import pymongo
+import os
+from config import ConfigData
+from dotenv import load_dotenv
+
+load_dotenv()
+
+openai_api = os.getenv("OPENAI_API_KEY")
+MONGO_DB_URI = os.getenv("MONGO_DB_URI")
+
+# ----------------------------
+# Initialize OpenAI LLM
+# ----------------------------
+llm_openai = ChatOpenAI(
+    openai_api_key=openai_api,
+    model='gpt-3.5-turbo-0125'
+)
+
+# ----------------------------
+# Few-shot examples for prompt (double curly braces to avoid template issues)
+# ----------------------------
+json_ex_1 = [
+    ConfigData.FEW_SHOT_EXAMPLE_1,
+    ConfigData.FEW_SHOT_EXAMPLE_2,
+    ConfigData.FEW_SHOT_EXAMPLE_3,
+    ConfigData.FEW_SHOT_EXAMPLE_4
+]
+
+json_ex_string = json.dumps(json_ex_1, indent=2).replace("{", "{{").replace("}", "}}")
+
+# ----------------------------
+# Prompt Template
+# ----------------------------
+prompt_template_for_creating_query = f"""
+You are an expert in crafting MongoDB NoSQL aggregation pipelines with 10 years of experience.
+You will be provided with a table schema and a schema description. Your task is to read the user's question
+and generate a valid MongoDB aggregation pipeline in JSON format.
+
+Table Schema:
+{ConfigData.TABLE_SCHEMA}
+
+Schema Description:
+{ConfigData.SCHEMA_DESCRIPTION}
+
+Few-Shot Examples:
+{json_ex_string}
+
+Instructions:
+- Only return the MongoDB aggregation pipeline (JSON array), nothing else.
+- Do not include explanations or extra text.
+- Use proper MongoDB syntax ($match, $project, $elemMatch, etc.) based on the question.
+
+User Question: {{user_question}}
+"""
+
+query_creation_prompt = PromptTemplate(
+    template=prompt_template_for_creating_query,
+    input_variables=["user_question"]
+)
+
+# ----------------------------
+# LLMChain
+# ----------------------------
+llmchain = LLMChain(llm=llm_openai, prompt=query_creation_prompt, verbose=True)
+
+# ----------------------------
+# Function to generate MongoDB pipeline
+# ----------------------------
+def get_query(user_question):
+    response_text = llmchain.run(user_question=user_question)
+    response_text = response_text.strip().replace("Output: ", "")
+    # Remove code block markers if any
+    if response_text.startswith("```"):
+        response_text = "\n".join(response_text.split("\n")[1:-1])
+    # Convert to Python list
+    return json.loads(response_text)
+
+# ----------------------------
+# MongoDB Connection
+# ----------------------------
+client = pymongo.MongoClient(MONGO_DB_URI)
+db = client[ConfigData.DB_NAME]
+collection = db[ConfigData.COLLECTION_NAME]
+
+# ----------------------------
+# Example Query
+# ----------------------------
+query_1 = get_query(user_question="List all Cardiologists in Colombo")
+pipeline = query_1
+
+# Print the generated pipeline
+result = collection.aggregate(pipeline)
+for doc in result:
+    print(json.dumps(doc,indent=2))
+

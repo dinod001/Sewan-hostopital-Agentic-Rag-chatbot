@@ -1,7 +1,4 @@
 class ConfigData:
-    # API Keys / DB Config
-    OPEN_AI_KEY = "sk-XXXX"
-    MONGO_DB_URI = "mongodb+srv://dinod:J4qr0NbNmCAAIvUB@cluster0.hmuptj5.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     DB_NAME = "ai_doctor_db"
     COLLECTION_NAME = "doctors"
 
@@ -13,15 +10,15 @@ class ConfigData:
                     "experience_years": "string",
                     "hospital": "string",
                     "location": "string",
-                    "contact": {
+                    "contact": {{
                         "phone": "string",
                         "email": "string"
-                    },
+                    }},
                     "availability": [
-                        {
+                        {{
                             "day": "string",
                             "time_slots": ["string"]
-                        }
+                        }}
                     ],
                     "qualifications": ["string"],
                     "languages": ["string"],
