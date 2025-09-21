@@ -1,10 +1,13 @@
 from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 #---Connection Configuration----
-
-MONGO_DB_URI = "mongodb+srv://dinod:J4qr0NbNmCAAIvUB@cluster0.hmuptj5.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
 DB_NAME = "ai_doctor_db"
 COLLECTION_NAME = "doctors"
+
+MONGO_DB_URI = os.getenv("MONGO_DB_URI")
 
 #--Connecting to the MongoDB---
 
