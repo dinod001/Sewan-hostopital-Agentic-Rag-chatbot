@@ -1,7 +1,7 @@
 class ConfigData:
     # API Keys / DB Config
     OPEN_AI_KEY = "sk-XXXX"
-    MONGO_DB_URI = "mongodb://localhost:27017/"
+    MONGO_DB_URI = "mongodb+srv://dinod:J4qr0NbNmCAAIvUB@cluster0.hmuptj5.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     DB_NAME = "ai_doctor_db"
     COLLECTION_NAME = "doctors"
 
