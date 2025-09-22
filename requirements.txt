@@ -4,3 +4,9 @@ langchain-community
 openai
 pymongo
 python-dotenv
+streamlit
+pinecone
+langchain_pinecone
+langchain_core
+langchain_text_splitters
+pypdf
