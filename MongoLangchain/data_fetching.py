@@ -4,7 +4,7 @@ from langchain.prompts import PromptTemplate
 import json
 import pymongo
 import os
-from config import ConfigData
+from .config import ConfigData
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -77,7 +77,11 @@ def get_query(user_question):
     if response_text.startswith("```"):
         response_text = "\n".join(response_text.split("\n")[1:-1])
     # Convert to Python list
-    return json.loads(response_text)
+    pipeline = json.loads(response_text) 
+
+    result = collection.aggregate(pipeline)
+    for doc in result:
+        return json.dumps(doc,indent=2)
 
 # ----------------------------
 # MongoDB Connection
@@ -86,14 +90,4 @@ client = pymongo.MongoClient(MONGO_DB_URI)
 db = client[ConfigData.DB_NAME]
 collection = db[ConfigData.COLLECTION_NAME]
 
-# ----------------------------
-# Example Query
-# ----------------------------
-query_1 = get_query(user_question="List all Cardiologists in Colombo")
-pipeline = query_1
-
-# Print the generated pipeline
-result = collection.aggregate(pipeline)
-for doc in result:
-    print(json.dumps(doc,indent=2))
 

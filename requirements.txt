@@ -1,6 +1,7 @@
 langchain
 langchain-openai
 langchain-community
+langgraph 
 openai
 pymongo
 python-dotenv
