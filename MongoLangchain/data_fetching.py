@@ -4,6 +4,7 @@ from langchain.prompts import PromptTemplate
 import json
 import pymongo
 import os
+import ast
 from .config import ConfigData
 from dotenv import load_dotenv
 
@@ -72,16 +73,28 @@ llmchain = LLMChain(llm=llm_openai, prompt=query_creation_prompt, verbose=True)
 # ----------------------------
 def get_query(user_question):
     response_text = llmchain.run(user_question=user_question)
-    response_text = response_text.strip().replace("Output: ", "")
-    # Remove code block markers if any
+    if not response_text or response_text.strip() == "":
+        return json.dumps({"error": "LLM returned an empty response"})
+
+    # --- 2. Clean code block markers ---
+    response_text = response_text.strip()
     if response_text.startswith("```"):
         response_text = "\n".join(response_text.split("\n")[1:-1])
-    # Convert to Python list
-    pipeline = json.loads(response_text) 
+
+    try:
+        pipeline = json.loads(response_text)
+    except json.JSONDecodeError:
+        try:
+            pipeline = ast.literal_eval(response_text)  
+        except Exception:
+            return json.dumps({"error": f"Invalid response: {response_text}"})
 
     result = collection.aggregate(pipeline)
-    for doc in result:
-        return json.dumps(doc,indent=2)
+    docs = [doc for doc in result]
+
+    if not docs:
+        return json.dumps({"data": "No results found in the database"})
+    return json.dumps(docs, indent=2)
 
 # ----------------------------
 # MongoDB Connection

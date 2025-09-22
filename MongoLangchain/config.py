@@ -26,6 +26,7 @@ class ConfigData:
                     "consultation_fee": "string"
                     '''
 
+
     SCHEMA_DESCRIPTION = '''
                     Here is the description to determine what each key represents:
 
@@ -37,7 +38,7 @@ class ConfigData:
                         - Doctor’s area of specialization 
                           (e.g., Cardiologist, Dermatologist, Pediatrician).
                     4. experience_years:
-                        - Total years of medical practice.
+                        - Total years of medical practice (stored as string).
                     5. hospital:
                         - Name of the hospital/clinic the doctor is associated with.
                     6. location:
@@ -58,12 +59,14 @@ class ConfigData:
                     10. languages:
                         - Languages the doctor can speak (array of strings).
                     11. ratings:
-                        - Patient ratings or average score (e.g., 4.5/5).
+                        - Patient ratings (stored as string, e.g., "4.8").
+                        - IMPORTANT: Always convert ratings to number using $toDouble before numeric comparisons.
                     12. consultation_fee:
-                        - Standard consultation fee (in a specific currency).
+                        - Standard consultation fee (stored as string, e.g., "2200").
+                        - IMPORTANT: Always convert consultation_fee to number using $toInt or $toDouble before numeric comparisons.
                     '''
 
-    # Few-shot MongoDB Aggregation Pipelines
+
     FEW_SHOT_EXAMPLE_1 = [
         # Find all cardiologists and project only key fields
         {
@@ -105,9 +108,14 @@ class ConfigData:
     FEW_SHOT_EXAMPLE_3 = [
         # Find doctors who speak Tamil and charge less than 2000 LKR
         {
+            "$addFields": {
+                "fee_num": { "$toInt": "$consultation_fee" }
+            }
+        },
+        {
             "$match": {
                 "languages": "Tamil",
-                "consultation_fee": {"$lt": 2000}
+                "fee_num": {"$lt": 2000}
             }
         },
         {
@@ -124,16 +132,21 @@ class ConfigData:
     FEW_SHOT_EXAMPLE_4 = [
         # Find top-rated dermatologists (rating > 4.5)
         {
+            "$addFields": {
+                "ratings_num": { "$toDouble": "$ratings" }
+            }
+        },
+        {
             "$match": {
                 "specialization": "Dermatologist",
-                "ratings": {"$gt": 4.5}
+                "ratings_num": { "$gt": 4.5 }
             }
         },
         {
             "$project": {
                 "name": 1,
                 "hospital": 1,
-                "ratings": 1,
+                "ratings_num": 1,
                 "location": 1
             }
         }

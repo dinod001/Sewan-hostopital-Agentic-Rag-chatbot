@@ -14,6 +14,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langgraph.graph import END, StateGraph
+import streamlit as st
 
 # Add parent directory to path to import MongoLangchain
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -66,7 +67,7 @@ grader_chain = grade_prompt | llm_grader
 rag_prompt = ChatPromptTemplate.from_template(
     """You are an assistant for question-answering tasks.
 Use the retrieved context to answer the question.
-If no relevant context is available, say you don't know.
+If no relevant context is available or Data not found in the database, say you don't know.
 
 Question: {question}
 Context: {context}
@@ -159,7 +160,38 @@ agentic_rag.add_edge("generate_answer", END)
 agentic_rag = agentic_rag.compile()
 
 # === Run Query ===
-if __name__ == "__main__":
-    query = "What is Sewana Hospital ?"
-    response = agentic_rag.invoke({"question": query})
-    print(response['generation'])
+# if __name__ == "__main__":
+#     query = "What is Sewana Hospital ?"
+#     response = agentic_rag.invoke({"question": query})
+#     print(response['generation'])
+
+
+# ----------------------------
+# Streamlit UI
+# ----------------------------
+
+st.set_page_config(page_title="Sewana Hospital QA", layout="wide")
+
+
+st.title("🏥 Sewana Hospital QA Assistant")
+st.write("Ask any question about Sewana Hospital and get instant answers.")
+
+# --- User Input ---
+question = st.text_input("Enter your question:")
+
+# --- Layout for button and answer ---
+if st.button("Get Answer"):
+    if question.strip() == "":
+        st.warning("⚠️ Please enter a question!")
+    else:
+        with st.spinner("🔍 Retrieving and generating answer..."):
+            response = agentic_rag.invoke({"question": question})
+        
+        # --- Display Answer in a nice container ---
+        st.subheader("Answer")
+        answer_text = response.get("generation", "No answer generated.")
+        st.success(answer_text)
+
+# Optional: Add some spacing and visual structure
+st.markdown("---")
+st.info("💡 Tip: Ask questions like 'What are the visiting hours?' or 'How can I book an appointment?'")
